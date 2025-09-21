@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, Plus } from "lucide-react";
@@ -27,6 +28,8 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
         content: ""
       });
       setSelectedNoteId(newNote.id);
+      // Invalidate and refetch notes list
+      queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
     } catch (error) {
       console.error("Failed to create note:", error);
     }
@@ -130,7 +133,8 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
                 note={selectedNote}
                 onTextSelection={onTextSelection}
                 onUpdate={() => {
-                  // Refresh notes list
+                  // Invalidate and refetch notes list
+                  queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
                 }}
               />
             ) : (

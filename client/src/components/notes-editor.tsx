@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,12 @@ export default function NotesEditor({ note, onTextSelection, onUpdate }: NotesEd
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const { apiKeys } = useApiKeys();
   const { toast } = useToast();
+
+  // Sync local state when note prop changes
+  useEffect(() => {
+    setTitle(note.title);
+    setContent(note.content);
+  }, [note.id, note.title, note.content]);
 
   const handleSave = async () => {
     setSaving(true);
