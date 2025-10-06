@@ -38,4 +38,22 @@ export const api = {
     const result = await response.json();
     return result.explanation;
   },
+
+  // PDF Upload API
+  async uploadPdf(file: File): Promise<{ note: Note; extractedText: string }> {
+    const formData = new FormData();
+    formData.append('pdf', file);
+    
+    const response = await fetch('/api/upload-pdf', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to upload PDF');
+    }
+    
+    return response.json();
+  },
 };

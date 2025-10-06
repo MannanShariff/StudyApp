@@ -83,7 +83,7 @@ export default function AiSearch() {
     <section className="p-6">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6">
-          <h2 className="mb-2 text-2xl font-semibold">AI Study Assistant</h2>
+          <h2 className="mb-2 text-2xl font-semibold text-foreground">AI Study Assistant</h2>
           <p className="text-muted-foreground">
             Ask questions and get responses from multiple AI models to enhance your understanding.
           </p>
@@ -131,7 +131,7 @@ export default function AiSearch() {
                         <div className={`flex h-8 w-8 items-center justify-center rounded-full ${getColorClass(response.color)}`}>
                           <IconComponent className="h-4 w-4" />
                         </div>
-                        <h3 className="font-medium">{response.model}</h3>
+                        <h3 className="font-medium text-foreground">{response.model}</h3>
                       </div>
                       <Button
                         variant="ghost"
@@ -142,9 +142,9 @@ export default function AiSearch() {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className={`prose prose-sm max-w-none ${response.error ? "text-destructive" : ""}`}>
+                    <div className={`max-w-none ${response.error ? "text-destructive" : "text-foreground"}`}>
                       {response.content.split('\n').map((paragraph, pIndex) => (
-                        <p key={pIndex} className="mb-2 last:mb-0">
+                        <p key={pIndex} className="mb-2 last:mb-0 text-sm leading-relaxed">
                           {paragraph}
                         </p>
                       ))}
@@ -160,7 +160,7 @@ export default function AiSearch() {
           <Card>
             <CardContent className="flex h-64 items-center justify-center p-6">
               <div className="text-center">
-                <h3 className="mb-2 text-lg font-medium">No Searches Yet</h3>
+                <h3 className="mb-2 text-lg font-medium text-foreground">No Searches Yet</h3>
                 <p className="text-muted-foreground">
                   Ask a question above to get responses from multiple AI models.
                 </p>

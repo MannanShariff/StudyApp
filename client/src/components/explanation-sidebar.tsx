@@ -8,18 +8,27 @@ interface ExplanationSidebarProps {
   selectedText: string;
   explanation: string;
   onClose: () => void;
+  onAddToNote?: (text: string) => void;
 }
 
 export default function ExplanationSidebar({ 
   isOpen, 
   selectedText, 
   explanation, 
-  onClose 
+  onClose,
+  onAddToNote
 }: ExplanationSidebarProps) {
   const handleAddToNotes = () => {
-    // Copy explanation to clipboard for now
-    navigator.clipboard.writeText(`**Selected Text:** ${selectedText}\n\n**Explanation:** ${explanation}`);
-    onClose();
+    const formattedText = `**Selected Text:** ${selectedText}\n\n**Explanation:** ${explanation}`;
+    
+    if (onAddToNote) {
+      onAddToNote(formattedText);
+      onClose();
+    } else {
+      // Fallback to clipboard copy
+      navigator.clipboard.writeText(formattedText);
+      onClose();
+    }
   };
 
   return (

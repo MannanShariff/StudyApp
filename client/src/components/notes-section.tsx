@@ -6,14 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Upload, Plus } from "lucide-react";
 import NotesEditor from "./notes-editor";
 import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import type { Note } from "@shared/schema";
 
 interface NotesSectionProps {
-  onTextSelection: (text: string, explanation: string) => void;
+  onTextSelection: (text: string, explanation: string, appendToNote?: (text: string) => void) => void;
 }
 
 export default function NotesSection({ onTextSelection }: NotesSectionProps) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [quickExplanation, setQuickExplanation] = useState<string>("");
+  const [quickSelectedText, setQuickSelectedText] = useState<string>("");
+  const { toast } = useToast();
 
   const { data: notes = [], isLoading } = useQuery<Note[]>({
     queryKey: ["/api/notes"],
@@ -39,11 +44,28 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".pdf";
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // PDF upload functionality would be implemented here
-        console.log("PDF uploaded:", file.name);
+        setUploading(true);
+        try {
+          const result = await api.uploadPdf(file);
+          setSelectedNoteId(result.note.id);
+          // Invalidate and refetch notes list
+          queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
+          toast({
+            title: "PDF Uploaded Successfully",
+            description: `Extracted text from "${file.name}" and created a new note.`,
+          });
+        } catch (error) {
+          toast({
+            title: "PDF Upload Failed",
+            description: error instanceof Error ? error.message : "Failed to upload PDF",
+            variant: "destructive",
+          });
+        } finally {
+          setUploading(false);
+        }
       }
     };
     input.click();
@@ -61,19 +83,27 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
+  const handleQuickExplanation = (text: string, explanation: string, appendToNote?: (text: string) => void) => {
+    setQuickSelectedText(text);
+    setQuickExplanation(explanation);
+    // Also call the original handler for the sidebar if needed
+    onTextSelection(text, explanation, appendToNote);
+  };
+
   return (
-    <section className="p-6">
-      <div className="mx-auto max-w-6xl">
+    <section className="p-6 min-h-screen">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold">Notes</h2>
           <div className="flex space-x-3">
             <Button 
               variant="outline" 
               onClick={handleUploadPdf}
+              disabled={uploading}
               data-testid="button-upload-pdf"
             >
               <Upload className="mr-2 h-4 w-4" />
-              Upload PDF
+              {uploading ? "Uploading..." : "Upload PDF"}
             </Button>
             <Button 
               onClick={handleCreateNote}
@@ -85,8 +115,8 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-4">
-          {/* Notes List */}
+        <div className="grid gap-6 lg:grid-cols-5">
+          {/* Notes List - Smaller sidebar */}
           <div className="lg:col-span-1">
             <Card>
               <CardContent className="p-4">
@@ -105,14 +135,14 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
                       <div
                         key={note.id}
                         onClick={() => setSelectedNoteId(note.id)}
-                        className={`cursor-pointer rounded-lg p-3 transition-colors ${
+                        className={`cursor-pointer rounded-lg p-2 transition-colors ${
                           selectedNoteId === note.id
                             ? "bg-accent text-accent-foreground"
                             : "hover:bg-secondary"
                         }`}
                         data-testid={`note-item-${note.id}`}
                       >
-                        <h4 className="text-sm font-medium line-clamp-1">
+                        <h4 className="text-xs font-medium line-clamp-2">
                           {note.title || "Untitled"}
                         </h4>
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -124,14 +154,40 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
                 )}
               </CardContent>
             </Card>
+            
+            {/* Quick Explanation Display */}
+            {quickExplanation && (
+              <Card className="mt-4">
+                <CardContent className="p-4">
+                  <h4 className="text-sm font-medium mb-2">Quick Explanation</h4>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    <strong>Selected:</strong> {quickSelectedText.length > 50 ? quickSelectedText.substring(0, 50) + '...' : quickSelectedText}
+                  </div>
+                  <div className="text-sm bg-secondary/50 p-3 rounded-lg">
+                    {quickExplanation}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-2 text-xs h-6" 
+                    onClick={() => {
+                      setQuickExplanation("");
+                      setQuickSelectedText("");
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Notes Editor */}
-          <div className="lg:col-span-3">
+          {/* Notes Editor - Larger area */}
+          <div className="lg:col-span-4">
             {selectedNote ? (
               <NotesEditor
                 note={selectedNote}
-                onTextSelection={onTextSelection}
+                onTextSelection={handleQuickExplanation}
                 onUpdate={() => {
                   // Invalidate and refetch notes list
                   queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
@@ -139,7 +195,7 @@ export default function NotesSection({ onTextSelection }: NotesSectionProps) {
               />
             ) : (
               <Card>
-                <CardContent className="flex h-96 items-center justify-center p-6">
+                <CardContent className="flex h-[600px] items-center justify-center p-6">
                   <div className="text-center">
                     <h3 className="mb-2 text-lg font-medium">No Note Selected</h3>
                     <p className="text-muted-foreground">

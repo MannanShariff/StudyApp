@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Moon, Sun, Settings, GraduationCap } from "lucide-react";
+import { Moon, Sun, GraduationCap, LogOut, User, Menu, X, Info, Key, StickyNote, Search } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AboutSection from "@/components/about-section";
@@ -17,19 +18,31 @@ const sections = [
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState("about");
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { user, logout } = useAuth();
   const [selectedText, setSelectedText] = useState("");
   const [explanation, setExplanation] = useState("");
   const [isExplanationOpen, setIsExplanationOpen] = useState(false);
+  const [currentAppendFunction, setCurrentAppendFunction] = useState<((text: string) => void) | null>(null);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle("dark");
   };
 
-  const handleTextSelection = (text: string, explanationText: string) => {
+  const handleLogout = () => {
+    logout();
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleTextSelection = (text: string, explanationText: string, appendToNote?: (text: string) => void) => {
     setSelectedText(text);
     setExplanation(explanationText);
+    setCurrentAppendFunction(() => appendToNote || null);
     setIsExplanationOpen(true);
   };
 
@@ -37,16 +50,18 @@ export default function Home() {
     setIsExplanationOpen(false);
     setSelectedText("");
     setExplanation("");
+    setCurrentAppendFunction(null);
   };
 
   const renderIcon = (iconName: string) => {
-    const iconMap: { [key: string]: string } = {
-      "info-circle": "fas fa-info-circle",
-      "key": "fas fa-key",
-      "sticky-note": "fas fa-sticky-note",
-      "search": "fas fa-search",
+    const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
+      "info-circle": Info,
+      "key": Key,
+      "sticky-note": StickyNote,
+      "search": Search,
     };
-    return <i className={`${iconMap[iconName]} text-xs`} />;
+    const IconComponent = iconMap[iconName] || Info;
+    return <IconComponent className="h-4 w-4" />;
   };
 
   const renderSection = () => {
@@ -70,6 +85,14 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-6">
           <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              title={isSidebarOpen ? "Close menu" : "Open menu"}
+            >
+              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <GraduationCap className="h-4 w-4" />
             </div>
@@ -77,15 +100,11 @@ export default function Home() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="secondary" 
-              size="sm"
-              className="flex items-center space-x-2"
-              data-testid="button-settings"
-            >
-              <Settings className="h-3 w-3" />
-              <span>Settings</span>
-            </Button>
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>Welcome, {user?.username}</span>
+            </div>
+            
             <Button 
               variant="ghost" 
               size="sm"
@@ -94,14 +113,29 @@ export default function Home() {
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="w-64 border-r border-border bg-background p-6">
-          <nav className="space-y-2">
+        <aside className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transform border-r border-border bg-background p-6 transition-transform duration-300 ease-in-out",
+          "md:relative md:z-auto",
+          isSidebarOpen 
+            ? "translate-x-0" 
+            : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"
+        )}>
+          <nav className="space-y-2 mt-16 md:mt-0">
             {sections.map((section) => (
               <button
                 key={section.id}
@@ -121,8 +155,19 @@ export default function Home() {
           </nav>
         </aside>
 
+        {/* Overlay for mobile */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden" 
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className={cn(
+          "flex-1 overflow-auto transition-all duration-300 ease-in-out",
+          isSidebarOpen ? "md:ml-0" : "md:ml-0"
+        )}>
           {renderSection()}
         </main>
 
@@ -132,6 +177,7 @@ export default function Home() {
           selectedText={selectedText}
           explanation={explanation}
           onClose={closeExplanation}
+          onAddToNote={currentAppendFunction}
         />
       </div>
     </div>

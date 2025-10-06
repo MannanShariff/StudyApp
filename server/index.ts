@@ -1,10 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import connectDB from "./config/database";
+import authRoutes from "./routes/auth";
+import apiKeysRoutes from "./routes/apiKeys";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+// Connect to MongoDB
+connectDB();
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -37,6 +45,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register authentication and API key routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/keys', apiKeysRoutes);
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -61,11 +73,7 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  server.listen(port, '127.0.0.1', () => {
     log(`serving on port ${port}`);
   });
 })();
