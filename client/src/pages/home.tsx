@@ -129,27 +129,50 @@ export default function Home() {
       <div className="flex min-h-screen">
         {/* Sidebar */}
         <aside className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform border-r border-border bg-background p-6 transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 transform border-r border-border bg-background transition-all duration-300 ease-in-out",
           "md:relative md:z-auto",
           isSidebarOpen 
-            ? "translate-x-0" 
-            : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"
+            ? "w-64 p-6 translate-x-0" 
+            : "-translate-x-full md:translate-x-0 md:w-16 md:px-2 md:py-6"
         )}>
-          <nav className="space-y-2 mt-16 md:mt-0">
+          {/* App logo in collapsed state */}
+          {!isSidebarOpen && (
+            <div className="hidden md:flex justify-center pt-4 pb-6">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+            </div>
+          )}
+          
+          <nav className={cn(
+            "space-y-2 mt-16 md:mt-0",
+            !isSidebarOpen && "md:flex md:flex-col md:items-center md:mt-0"
+          )}>
             {sections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
-                  "flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center rounded-lg text-sm font-medium transition-colors group relative",
+                  isSidebarOpen
+                    ? "w-full space-x-3 px-3 py-2"
+                    : "w-full justify-center px-2 py-2 md:w-12 md:h-12",
                   activeSection === section.id
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
                 data-testid={`nav-${section.id}`}
+                title={!isSidebarOpen ? section.label : undefined}
               >
                 {renderIcon(section.icon)}
-                <span>{section.label}</span>
+                {isSidebarOpen && <span>{section.label}</span>}
+                
+                {/* Tooltip for collapsed state */}
+                {!isSidebarOpen && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 hidden md:block">
+                    {section.label}
+                  </div>
+                )}
               </button>
             ))}
           </nav>
@@ -166,7 +189,7 @@ export default function Home() {
         {/* Main Content */}
         <main className={cn(
           "flex-1 overflow-auto transition-all duration-300 ease-in-out",
-          isSidebarOpen ? "md:ml-0" : "md:ml-0"
+          !isSidebarOpen && "md:ml-0"
         )}>
           {renderSection()}
         </main>
