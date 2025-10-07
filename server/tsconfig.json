@@ -2,12 +2,29 @@
     "extends": "../tsconfig.base.json",
     "compilerOptions": {
         "outDir": "../dist",
-        "module": "commonjs",
-        "target": "es2019",
+        "module": "es2022",
+        "target": "es2022",
         "rootDir": "./",
-        "noEmitOnError": false
+        "noEmitOnError": false,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "baseUrl": "../",
+        "paths": {
+            "@shared/*": [
+                "shared/*"
+            ]
+        }
     },
     "include": [
-        "./**/*"
+        "./**/*.ts",
+        "../shared/**/*.ts"
+    ],
+    "exclude": [
+        "../client",
+        "../vite.config.ts",
+        "../**/*.test.ts"
     ]
 }
