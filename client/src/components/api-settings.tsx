@@ -228,9 +228,8 @@ export default function ApiSettings() {
                 </div>
                 <div className="mt-3 text-xs text-muted-foreground">
                   <p>1. Sign up at <strong>openrouter.ai</strong></p>
-                  <p>2. Get $1 free credits upon signup</p>
-                  <p>3. Create your API key in the Keys section</p>
-                  <p>4. Copy the key (starts with sk-or-v1-...)</p>
+                  <p>2. Create your API key in the Keys section</p>
+                  <p>3. Copy the key (starts with sk-or-v1-...)</p>
                 </div>
               </div>
 
@@ -255,7 +254,7 @@ export default function ApiSettings() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
                     <Gem className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">Gemini 1.5 Flash:</span>
+                    <span className="font-medium">Gemini key: </span>
                     <code className="text-xs bg-secondary px-2 py-1 rounded">AIzaSy...</code>
                   </div>
                 </div>
@@ -267,18 +266,7 @@ export default function ApiSettings() {
                 </div>
               </div>
 
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-4 text-sm">
-                <div className="flex items-start space-x-2">
-                  <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">Security Note</p>
-                    <p className="text-blue-800 dark:text-blue-200 mt-1">
-                      API keys are stored temporarily in your browser session and are never sent to our servers permanently. 
-                      Clear your browser data to remove stored keys.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </CardContent>
         </Card>
