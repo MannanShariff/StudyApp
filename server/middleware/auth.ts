@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { User, IUser } from '../models/User';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends Omit<Request, 'user'> {
   user?: IUser;
 }
 
@@ -25,9 +25,10 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       });
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-    const user = await User.findById(decoded.userId);
+    // Ensure jwtSecret is string for TypeScript
+    const decoded = jwt.verify(token, jwtSecret as string) as { userId: string };
 
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ 
         success: false, 
@@ -35,10 +36,16 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       });
     }
 
-    req.user = user;
+    // Cast Mongoose Document to IUser
+    req.user = user as unknown as IUser;
+
     next();
-  } catch (error) {
-    console.error('Authentication error:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Authentication error:', error.message);
+    } else {
+      console.error('Authentication error:', error);
+    }
     res.status(401).json({ 
       success: false, 
       message: 'Token is not valid' 
@@ -54,5 +61,6 @@ export const generateToken = (userId: string): string => {
     throw new Error('JWT secret not configured');
   }
 
-  return jwt.sign({ userId }, jwtSecret, { expiresIn: jwtExpiresIn });
+  // Ensure jwtSecret is string for TypeScript
+  return jwt.sign({ userId }, jwtSecret, { expiresIn: jwtExpiresIn } as any);
 };

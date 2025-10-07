@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { User } from '../models/User';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
@@ -16,9 +16,10 @@ const apiKeysSchema = z.object({
 // @route   GET /api/keys
 // @desc    Get user's API keys
 // @access  Private
-router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/', authenticate as any, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    const user = req.user;
+    const user = authReq.user;
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -53,10 +54,11 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 // @route   POST /api/keys
 // @desc    Save/Update user's API keys
 // @access  Private
-router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/', authenticate as any, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const validatedData = apiKeysSchema.parse(req.body);
-    const user = req.user;
+    const user = authReq.user;
     
     if (!user) {
       return res.status(401).json({
@@ -81,8 +83,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       updateFields['apiKeys.deepseek'] = validatedData.deepseek;
     }
 
-    console.log('Updating API keys for user:', user._id, 'with fields:', updateFields);
-    const updatedUser = await User.findByIdAndUpdate(user._id, { $set: updateFields }, { new: true });
+    console.log('Updating API keys for user:', (user as any)._id, 'with fields:', updateFields);
+    const updatedUser = await User.findByIdAndUpdate((user as any)._id, { $set: updateFields }, { new: true });
     console.log('Updated user API keys:', updatedUser?.apiKeys);
 
     res.json({
@@ -110,9 +112,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 // @route   GET /api/keys/actual
 // @desc    Get actual API keys for use (not masked)
 // @access  Private
-router.get('/actual', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/actual', authenticate as any, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    const user = req.user;
+    const user = authReq.user;
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -136,10 +139,11 @@ router.get('/actual', authenticate, async (req: AuthRequest, res: Response) => {
 // @route   DELETE /api/keys/:provider
 // @desc    Delete specific API key
 // @access  Private
-router.delete('/:provider', authenticate, async (req: AuthRequest, res: Response) => {
+router.delete('/:provider', authenticate as any, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { provider } = req.params;
-    const user = req.user;
+    const user = authReq.user;
     
     if (!user) {
       return res.status(401).json({
@@ -157,7 +161,7 @@ router.delete('/:provider', authenticate, async (req: AuthRequest, res: Response
     }
 
     const updateField = `apiKeys.${provider}`;
-    await User.findByIdAndUpdate(user._id, { [updateField]: '' });
+    await User.findByIdAndUpdate((user as any)._id, { [updateField]: '' });
 
     res.json({
       success: true,

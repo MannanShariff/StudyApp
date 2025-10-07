@@ -92,22 +92,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.warn('Very short text extracted:', extractedText);
         }
         
-      } catch (pdfError) {
+      } catch (pdfError: unknown) {
         console.error('PDF parsing failed:', pdfError);
         
         // Try to provide more specific error messages
         let errorMessage = 'Failed to extract text from PDF';
-        if (pdfError.message.includes('Invalid PDF')) {
+        const errorMsg = pdfError instanceof Error ? pdfError.message : 'Unknown error';
+        if (errorMsg.includes('Invalid PDF')) {
           errorMessage = 'The uploaded file appears to be corrupted or not a valid PDF';
-        } else if (pdfError.message.includes('password')) {
+        } else if (errorMsg.includes('password')) {
           errorMessage = 'This PDF is password protected and cannot be processed';
-        } else if (pdfError.message.includes('No text')) {
+        } else if (errorMsg.includes('No text')) {
           errorMessage = 'This PDF contains no extractable text (it may be image-based)';
         }
         
         return res.status(400).json({ 
           message: errorMessage,
-          details: pdfError.message,
+          details: errorMsg,
           suggestion: 'Try uploading a different PDF file or convert image-based PDFs to text-searchable format'
         });
       }
@@ -125,11 +126,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         note,
         extractedText: extractedText.length > 500 ? extractedText.substring(0, 500) + '...' : extractedText,
         pdfInfo: {
-          pages: pdfInfo.pages || 'Unknown',
+          pages: (pdfInfo as any).pages || 'Unknown',
           size: req.file.size,
           textLength: extractedText.length
         },
-        message: `Successfully extracted ${extractedText.length} characters from ${pdfInfo.pages || '?'} page(s)`
+        message: `Successfully extracted ${extractedText.length} characters from ${(pdfInfo as any).pages || '?'} page(s)`
       });
       
     } catch (error) {
@@ -308,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   })
                 }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
-              ]);
+              ]) as Response;
               
               if (!response.ok) {
                 const errorText = await response.text();
@@ -337,7 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       });
                       
                       if (fallbackResponse.ok) {
-                        const fallbackData = await fallbackResponse.json();
+                        const fallbackData = await fallbackResponse.json() as any;
                         const fallbackContent = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (fallbackContent) {
                           console.log(`Fallback model ${fallbackModel} succeeded`);
@@ -350,16 +351,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           };
                         }
                       }
-                    } catch (fallbackError) {
-                      console.log(`Fallback model ${fallbackModel} also failed:`, fallbackError.message);
+                    } catch (fallbackError: unknown) {
+                      console.log(`Fallback model ${fallbackModel} also failed:`, fallbackError instanceof Error ? fallbackError.message : 'Unknown error');
                     }
                   }
                 }
                 
-                throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+              throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
               }
               
-              const data = await response.json();
+              const data = await (response as Response).json() as any;
               console.log('Gemini API success:', data);
               
               const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -595,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   })
                 }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
-              ]);
+              ]) as Response;
               
               if (!response.ok) {
                 const errorText = await response.text();
@@ -623,15 +624,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       });
                       
                       if (fallbackResponse.ok) {
-                        const fallbackData = await fallbackResponse.json();
+                        const fallbackData = await fallbackResponse.json() as any;
                         const fallbackContent = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (fallbackContent) {
                           console.log(`Explanation fallback model ${fallbackModel} succeeded`);
                           return fallbackContent;
                         }
                       }
-                    } catch (fallbackError) {
-                      console.log(`Explanation fallback model ${fallbackModel} also failed:`, fallbackError.message);
+                    } catch (fallbackError: unknown) {
+                      console.log(`Explanation fallback model ${fallbackModel} also failed:`, fallbackError instanceof Error ? fallbackError.message : 'Unknown error');
                     }
                   }
                 }
@@ -639,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
               }
               
-              const data = await response.json();
+              const data = await response.json() as any;
               console.log('Gemini explanation API success:', data);
               
               const content = data.candidates?.[0]?.content?.parts?.[0]?.text;

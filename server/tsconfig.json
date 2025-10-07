@@ -4,7 +4,7 @@
         "outDir": "../dist",
         "module": "es2022",
         "target": "es2022",
-        "rootDir": "./",
+        "rootDir": "../",
         "noEmitOnError": false,
         "moduleResolution": "node",
         "esModuleInterop": true,
@@ -23,8 +23,8 @@
         "../shared/**/*.ts"
     ],
     "exclude": [
-        "../client",
-        "../vite.config.ts",
-        "../**/*.test.ts"
+        "client",
+        "vite.config.ts",
+        "**/*.test.ts"
     ]
 }

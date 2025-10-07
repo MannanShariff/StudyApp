@@ -53,7 +53,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     await user.save();
 
     // Generate token
-    const token = generateToken(user._id.toString());
+    const token = generateToken((user._id as any).toString());
 
     // Set cookie
     res.cookie('token', token, {
@@ -80,7 +80,7 @@ router.post('/signup', async (req: Request, res: Response) => {
       });
     }
 
-    if (error.code === 11000) {
+    if ((error as any).code === 11000) {
       return res.status(400).json({
         success: false,
         message: 'User with this email or username already exists'
@@ -121,7 +121,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Generate token
-    const token = generateToken(user._id.toString());
+    const token = generateToken((user._id as any).toString());
 
     // Set cookie
     res.cookie('token', token, {
@@ -169,11 +169,12 @@ router.post('/logout', (req: Request, res: Response) => {
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/me', authenticate as any, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     res.json({
       success: true,
-      user: req.user?.toJSON()
+      user: authReq.user?.toJSON()
     });
   } catch (error) {
     console.error('Get user error:', error);
