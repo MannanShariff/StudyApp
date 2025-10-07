@@ -5,11 +5,11 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getNotes(): Promise<Note[]>;
-  getNote(id: string): Promise<Note | undefined>;
-  createNote(note: InsertNote): Promise<Note>;
-  updateNote(id: string, note: Partial<InsertNote>): Promise<Note | undefined>;
-  deleteNote(id: string): Promise<boolean>;
+  getNotes(userId: string): Promise<Note[]>;
+  getNote(id: string, userId: string): Promise<Note | undefined>;
+  createNote(note: InsertNote & { userId: string }): Promise<Note>;
+  updateNote(id: string, userId: string, note: Partial<InsertNote>): Promise<Note | undefined>;
+  deleteNote(id: string, userId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -38,17 +38,18 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getNotes(): Promise<Note[]> {
-    return Array.from(this.notes.values()).sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+  async getNotes(userId: string): Promise<Note[]> {
+    return Array.from(this.notes.values())
+      .filter(note => note.userId === userId)
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }
 
-  async getNote(id: string): Promise<Note | undefined> {
-    return this.notes.get(id);
+  async getNote(id: string, userId: string): Promise<Note | undefined> {
+    const note = this.notes.get(id);
+    return (note && note.userId === userId) ? note : undefined;
   }
 
-  async createNote(insertNote: InsertNote): Promise<Note> {
+  async createNote(insertNote: InsertNote & { userId: string }): Promise<Note> {
     const id = randomUUID();
     const now = new Date();
     const note: Note = { 
@@ -61,9 +62,9 @@ export class MemStorage implements IStorage {
     return note;
   }
 
-  async updateNote(id: string, noteUpdate: Partial<InsertNote>): Promise<Note | undefined> {
+  async updateNote(id: string, userId: string, noteUpdate: Partial<InsertNote>): Promise<Note | undefined> {
     const existing = this.notes.get(id);
-    if (!existing) return undefined;
+    if (!existing || existing.userId !== userId) return undefined;
     
     const updated: Note = {
       ...existing,
@@ -74,7 +75,9 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async deleteNote(id: string): Promise<boolean> {
+  async deleteNote(id: string, userId: string): Promise<boolean> {
+    const existing = this.notes.get(id);
+    if (!existing || existing.userId !== userId) return false;
     return this.notes.delete(id);
   }
 }

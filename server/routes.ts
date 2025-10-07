@@ -8,6 +8,8 @@ import OpenAI from "openai";
 import multer from "multer";
 import jwt from "jsonwebtoken";
 import { User } from "./models/User.js";
+import { authenticate, AuthRequest } from "./middleware/auth.js";
+import { Request, Response as ExpressResponse } from "express";
 
 // Create require function for ES modules
 const require = createRequire(import.meta.url);
@@ -49,7 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PDF upload route
-  app.post("/api/upload-pdf", upload.single('pdf'), async (req, res) => {
+  app.post("/api/upload-pdf", authenticate as any, upload.single('pdf'), async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No PDF file uploaded" });
@@ -116,7 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a new note with the extracted text
       const noteData = {
         title: req.file.originalname.replace(/\.pdf$/i, '') || 'PDF Document',
-        content: extractedText
+        content: extractedText,
+        userId: (authReq.user as any)._id.toString()
       };
       
       const note = await storage.createNote(noteData);
@@ -148,18 +152,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notes CRUD routes
-  app.get("/api/notes", async (req, res) => {
+  app.get("/api/notes", authenticate as any, async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
-      const notes = await storage.getNotes();
+      const userId = (authReq.user as any)._id.toString();
+      const notes = await storage.getNotes(userId);
       res.json(notes);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch notes" });
     }
   });
 
-  app.get("/api/notes/:id", async (req, res) => {
+  app.get("/api/notes/:id", authenticate as any, async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
-      const note = await storage.getNote(req.params.id);
+      const userId = (authReq.user as any)._id.toString();
+      const note = await storage.getNote(req.params.id, userId);
       if (!note) {
         return res.status(404).json({ message: "Note not found" });
       }
@@ -169,10 +177,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notes", async (req, res) => {
+  app.post("/api/notes", authenticate as any, async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
       const noteData = insertNoteSchema.parse(req.body);
-      const note = await storage.createNote(noteData);
+      const userId = (authReq.user as any)._id.toString();
+      const note = await storage.createNote({ ...noteData, userId });
       res.json(note);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -182,10 +192,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/notes/:id", async (req, res) => {
+  app.put("/api/notes/:id", authenticate as any, async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
       const noteData = insertNoteSchema.partial().parse(req.body);
-      const note = await storage.updateNote(req.params.id, noteData);
+      const userId = (authReq.user as any)._id.toString();
+      const note = await storage.updateNote(req.params.id, userId, noteData);
       if (!note) {
         return res.status(404).json({ message: "Note not found" });
       }
@@ -198,9 +210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/notes/:id", async (req, res) => {
+  app.delete("/api/notes/:id", authenticate as any, async (req: Request, res: ExpressResponse) => {
+    const authReq = req as AuthRequest;
     try {
-      const deleted = await storage.deleteNote(req.params.id);
+      const userId = (authReq.user as any)._id.toString();
+      const deleted = await storage.deleteNote(req.params.id, userId);
       if (!deleted) {
         return res.status(404).json({ message: "Note not found" });
       }
