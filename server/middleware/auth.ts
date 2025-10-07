@@ -1,6 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { User, IUser } from '../models/User';
+import { User, IUser } from '../models/User.js';
 
 export interface AuthRequest extends Omit<Request, 'user'> {
   user?: IUser;

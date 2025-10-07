@@ -1,10 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import connectDB from "./config/database";
-import authRoutes from "./routes/auth";
-import apiKeysRoutes from "./routes/apiKeys";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
+import connectDB from "./config/database.js";
+import authRoutes from "./routes/auth.js";
+import apiKeysRoutes from "./routes/apiKeys.js";
 
 const app = express();
 app.use(express.json());

@@ -1,13 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { createRequire } from "module";
-import { storage } from "./storage";
-import { aiRequestSchema, explainTextSchema, insertNoteSchema } from "@shared/schema";
+import { storage } from "./storage.js";
+import { aiRequestSchema, explainTextSchema, insertNoteSchema } from "../shared/schema.js";
 import { z } from "zod";
 import OpenAI from "openai";
 import multer from "multer";
 import jwt from "jsonwebtoken";
-import { User } from "./models/User";
+import { User } from "./models/User.js";
 
 // Create require function for ES modules
 const require = createRequire(import.meta.url);
